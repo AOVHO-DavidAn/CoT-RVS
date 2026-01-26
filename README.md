@@ -4,11 +4,16 @@
 > [Project page](https://danielshkao.github.io/cot-rvs.html)
 
 ---
-Our code will be released soon.
+<img width="649" height="385" alt="image" src="https://github.com/user-attachments/assets/b462753c-0f75-4a87-9f2b-965696ab134d" />
 
-## Demo
-https://github.com/user-attachments/assets/d1bff2d8-702e-44a1-9b1c-4651e88c4b66
+## Release Plan
 
+- [ ] Chat with CoT-RVS-GPT-4o
+- [ ] Chat with CoT-RVS-Gemma
+- [ ] Chat with CoT-RVS-LLaVA (online)
+- [ ] T-ReasonVOS dataset
+- [ ] Testing
+      
 ## Citation
 If you find this repository helpful, please consider citing:
 ```
