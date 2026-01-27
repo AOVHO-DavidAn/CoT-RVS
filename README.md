@@ -11,7 +11,7 @@
 - [01/2026] CoT-RVS is accepted to ICLR 2026! &#127881;&#127881;
 - [09/2025] Preprint is abailable on [arXiv](https://arxiv.org/abs/2505.18561).
   
-## Release Plan
+## To-do List
 
 Our code will be released soon. Please stay tuned!&#129395;
 - [ ] Chat with CoT-RVS-GPT-4o
