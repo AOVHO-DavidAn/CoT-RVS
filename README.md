@@ -53,7 +53,7 @@ pip install flash-attn --no-build-isolation
 ### Chat with CoT-RVS
 To chat with CoT-RVS, please first fill in your OpenAI API Key in `config/openai.yaml`. Then, run the following command:
 ```
-python chat_offline \
+python chat_offline.py \
 --sam2_model [path to SAM2 checkpoint] \
 --segzero_model [path to SegZero checkpoint] \
 --output_dir [output directory] \
@@ -71,7 +71,7 @@ To chat with CoT-RVS-LLaVA for online Reasoning VOS, we use the `eval_model` met
 ```
 2. Run the following command:
 ```
-python chat_online \
+python chat_online.py \
 --sam2_model [path to SAM2 checkpoint] \
 --segzero_model [path to SegZero checkpoint] \
 --llava_model [path to LLaVA checkpoint] \
