@@ -10,14 +10,7 @@
 
 - [01/2026] CoT-RVS is accepted to ICLR 2026! &#127881;&#127881;
 - [09/2025] Preprint is abailable on [arXiv](https://arxiv.org/abs/2505.18561).
-  
-## To-do List
 
-Our code will be released soon. Please stay tuned!&#129395;
-- [x] CoT-RVS-GPT-4o
-- [ ] CoT-RVS-Gemma
-- [x] Chat with CoT-RVS-LLaVA (online)
-- [ ] T-ReasonVOS dataset
 
 ## Installation
 
@@ -57,8 +50,12 @@ python chat_offline.py \
 --sam2_model [path to SAM2 checkpoint] \
 --segzero_model [path to SegZero checkpoint] \
 --output_dir [output directory] \
---num_candidates [number of keyframe candidates]
+--num_candidates 8
 ```
+
+You may adjust the `--num_candidates` hyper-parameter, which changes the number of keyframe candidates as MLLM's input.
+
+We offer a test sample in `test_sample/` and the expected output in `vis_output/`.
 
 ### Chat with CoT-RVS-(Online extension)
 To chat with CoT-RVS-LLaVA for online Reasoning VOS, we use the `eval_model` method in LLaVA's implementation. 
@@ -81,7 +78,7 @@ python chat_online.py \
 You may adjust the hyper-parameter `--xi` to change LLaVA's intervention frequency.
 
 ## T-ReasonVOS Dataset
-We will release the T-ReasonVOS dataset very soon. Please stay tuned!
+Refer to the [T-ReasonVOS](T-ReasonVOS) directory for more details.
 
 ## Citation
 If you find this repository helpful, please consider citing:
