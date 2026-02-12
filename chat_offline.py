@@ -12,7 +12,7 @@ from sam2.build_sam import build_sam2_video_predictor
 from tqdm import tqdm
 
 from utils.util import *
-from utils.prompt_api import *
+from infer.prompt_api import *
 
 from openai import AzureOpenAI
 from transformers import Qwen2_5_VLForConditionalGeneration, AutoProcessor

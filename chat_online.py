@@ -18,7 +18,7 @@ from utils.util import save_video
 
 from LLaVA.llava.model.builder import load_pretrained_model
 from LLaVA.llava.mm_utils import get_model_name_from_path
-from utils.prompt_llava import *
+from infer.prompt_llava import *
 COLOR_MAP = [(255,0,0),(0,255,0),(0,0,255),(222, 148, 80),(147, 71, 238),(187, 19, 208),(98, 43, 249)]
 
 def parse_args(args):
