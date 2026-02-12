@@ -22,8 +22,8 @@ from infer.prompt_llava import *
 COLOR_MAP = [(255,0,0),(0,255,0),(0,0,255),(222, 148, 80),(147, 71, 238),(187, 19, 208),(98, 43, 249)]
 
 def parse_args(args):
-    parser = argparse.ArgumentParser(description="SAM2 chat")
-    parser.add_argument("--sam2_model", default="../sam2/checkpoints/sam2.1_hiera_large.pt",type=str)
+    parser = argparse.ArgumentParser(description="CoT-RVS chat")
+    parser.add_argument("--sam2_model", default="checkpoints/sam2.1_hiera_large.pt",type=str)
     parser.add_argument("--sam2_model_cfg", default="configs/sam2.1/sam2.1_hiera_l.yaml", type=str)
     parser.add_argument("--llava_model", default="liuhaotian/llava-v1.5-7b", type=str)    
     parser.add_argument("--segzero_model", default="Ricky06662/Seg-Zero-7B", type=str)    

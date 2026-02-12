@@ -1,7 +1,6 @@
 from openai import AzureOpenAI
 import base64
 from mimetypes import guess_type
-import ast
 from utils.util import preprocess_prompt
 def local_image_to_data_url(image_path):
     # Guess the MIME type of the image based on the file extension
@@ -64,13 +63,3 @@ Here is a grid image with {num_keyframes} keyframes. The user query is "{query}"
         max_tokens=2500
     )
     return response.choices[0].message.content
-def parse_gpt_output(text):
-    list_outputs = text.split("Output list: ")[-1]
-    # Prepare the input string for parsing
-    text_input = list_outputs.replace('object_index', '"object_index"').replace('keyframe', '"keyframe"').replace('object_description', '"object_description"')
-
-    # Convert the string to a list of dictionaries
-    output = ast.literal_eval(text_input)
-    return output
-
-

@@ -40,6 +40,7 @@ pip install flash-attn --no-build-isolation
 1. Download [SAM2 checkpoints](https://github.com/facebookresearch/sam2?tab=readme-ov-file#download-checkpoints) as video processor. We use [sam2.1_hiera_large.pt](https://dl.fbaipublicfiles.com/segment_anything_2/092824/sam2.1_hiera_large.pt) in our paper.
 2. Download Seg-Zero checkpoints from [Huggingface](https://huggingface.co/Ricky06662/Seg-Zero-7B).
 3. (Optional) Download LLaVA1.5-7B from [Huggingface](https://huggingface.co/liuhaotian/llava-v1.5-7b) for Online Reasoning VOS.
+4. (Optional) Download Gemma3-12B from [Huggingface](https://huggingface.co/google/gemma-3-12b-it) as an alternative if you don't have OpenAI API budgets. Note that this may lead to a performance degration.
 
 ## Inference
 
@@ -76,6 +77,29 @@ python chat_online.py \
 --xi 10
 ```
 You may adjust the hyper-parameter `--xi` to change LLaVA's intervention frequency.
+
+### Replace API with Gemma3
+For users without OpenAI API budgets, we encourage you to test CoT-RVS on different MLLMs. We provide a baseline with Gemma3-12B in our paper. To start with, we have to upgrade the `transformers` and `timm` library:
+```
+pip install -U transformers==4.50.0 timm
+```
+Run the following command to generate Gemma-3's chain of thoughts:
+```
+python run_gemma.py \
+--gemma3_model [Gemma3 model directory] \
+--output_dir [output directory] \
+--num_candidates 8
+```
+A sample response using the test case in `test_sample\` is saved in `vis_output\Gemma-3-responses\`. Next, run the following command to segment the target and track over the entire video:
+```
+python seg_and_track.py \
+--video_dir [input video dir] \
+--mllm_response_path [path to Gemma3's response] \
+--sam2_model [path to SAM2 checkpoint] \
+--segzero_model [path to SegZero checkpoint] \
+--output_dir [output directory] \
+--num_candidates 8
+```
 
 ## T-ReasonVOS Dataset
 Refer to the [T-ReasonVOS](T-ReasonVOS) directory for more details.

@@ -2,6 +2,7 @@ import os
 from PIL import Image, ImageFont, ImageDraw
 from pathlib import Path
 from skvideo import io
+import ast
 
 def save_video(
     images,
@@ -89,3 +90,12 @@ def preprocess_prompt(query,num_keyframes):
 
 Here is a grid image with {num_keyframes} keyframes. The user query is "{query}". Follow the instruction and output the index of the best keyframes.
 """
+
+def parse_gpt_output(text):
+    list_outputs = text.split("Output list: ")[-1]
+    # Prepare the input string for parsing
+    text_input = list_outputs.replace('object_index', '"object_index"').replace('keyframe', '"keyframe"').replace('object_description', '"object_description"')
+
+    # Convert the string to a list of dictionaries
+    output = ast.literal_eval(text_input)
+    return output
