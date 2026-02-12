@@ -1,4 +1,5 @@
-api_key: b813f562585d42c28279022ac3a136cc
+
+api_key: 
 api_version: 2024-06-01
-azure_endpoint: https://hkust.azure-api.net
+azure_endpoint: 
 model: gpt-4o
