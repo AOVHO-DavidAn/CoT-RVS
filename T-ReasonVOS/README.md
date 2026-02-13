@@ -5,6 +5,7 @@ To evaluate the performance of reasoning segmentation in temporally sensitive ca
 ## License Agreement
 
 ⚠️ By downloading, using, or sharing this dataset, you agree to comply with the licenses outlined above.
+
 ⚠️ This dataset of T-ReasVOS is released for non-commercial research purpose only.
 
 ## Usage
