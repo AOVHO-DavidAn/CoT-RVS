@@ -8,6 +8,7 @@
 
 ## News
 
+- [02/2026] We release our code and [T-ReasonVOS](T-ReasonVOS) dataset!
 - [01/2026] CoT-RVS is accepted to ICLR 2026! &#127881;&#127881;
 - [09/2025] Preprint is abailable on [arXiv](https://arxiv.org/abs/2505.18561).
 
