@@ -13,12 +13,12 @@ from sam2.sam2_image_predictor import SAM2ImagePredictor
 from sam2.build_sam import build_sam2_video_predictor
 from pathlib import Path
 from tqdm import tqdm
-from seg_zero import generate_mask
 from utils.util import save_video
 
 from LLaVA.llava.model.builder import load_pretrained_model
 from LLaVA.llava.mm_utils import get_model_name_from_path
 from infer.prompt_llava import *
+from infer.seg_zero import generate_mask
 COLOR_MAP = [(255,0,0),(0,255,0),(0,0,255),(222, 148, 80),(147, 71, 238),(187, 19, 208),(98, 43, 249)]
 
 def parse_args(args):

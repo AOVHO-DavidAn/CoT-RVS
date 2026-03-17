@@ -17,7 +17,7 @@ from infer.prompt_api import *
 from openai import AzureOpenAI
 from transformers import Qwen2_5_VLForConditionalGeneration, AutoProcessor
 from sam2.sam2_image_predictor import SAM2ImagePredictor
-from seg_zero import generate_mask
+from infer.seg_zero import generate_mask
 
 
 COLOR_MAP = [(255,0,0),(0,255,255),(128,255,0),(187, 19, 208),(222, 148, 80),(147, 71, 238),(98, 43, 249)]

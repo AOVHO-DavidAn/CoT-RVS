@@ -15,7 +15,7 @@ from utils.util import *
 from infer.prompt_gemma import *
 
 from transformers import AutoProcessor, Gemma3ForConditionalGeneration
-from seg_zero import generate_mask
+from infer.seg_zero import generate_mask
 
 
 COLOR_MAP = [(255,0,0),(0,255,255),(128,255,0),(187, 19, 208),(222, 148, 80),(147, 71, 238),(98, 43, 249)]

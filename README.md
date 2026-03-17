@@ -60,15 +60,7 @@ You may adjust the `--num_candidates` hyper-parameter, which changes the number 
 We offer a test sample in `test_sample/` and the expected output in `vis_output/`.
 
 ### Chat with CoT-RVS-(Online extension)
-To chat with CoT-RVS-LLaVA for online Reasoning VOS, we use the `eval_model` method in LLaVA's implementation. 
-1. Please first modify the `eval_model` in `LLaVA\llava\eval\run_llava.py`:
-```
-> ...
-> outputs = tokenizer.batch_decode(output_ids, skip_special_tokens=True)[0].strip()
-> # print(outputs) # Comment this line
-> return outputs # Add this line to return LLaVA's response
-```
-2. Run the following command:
+To chat with CoT-RVS-LLaVA for online Reasoning VOS, run the following command:
 ```
 python chat_online.py \
 --sam2_model [path to SAM2 checkpoint] \
