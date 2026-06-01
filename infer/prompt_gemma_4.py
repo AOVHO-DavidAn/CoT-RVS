@@ -19,8 +19,11 @@ def prompt_gemma(model, processor, image_path, query, num_keyframes):
     ]
 
     inputs = processor.apply_chat_template(
-        messages, add_generation_prompt=True, tokenize=True,
-        return_dict=True, return_tensors="pt"
+        messages, 
+        add_generation_prompt=True, 
+        tokenize=True,
+        return_dict=True, 
+        return_tensors="pt"
     ).to(model.device, dtype=torch.bfloat16)
 
     input_len = inputs["input_ids"].shape[-1]
@@ -34,8 +37,6 @@ def save_answer(
     query,
     answer,
     path,
-    model_name = "Gemma-3",
-    inference_time = None,
 ):
 
     # Create the parent directory if it doesn't already exist.
@@ -46,6 +47,4 @@ def save_answer(
         f.write(f"")
     with open(path,"a") as f:
         f.write(f"Query: {query}\n")
-        if inference_time is not None:
-            f.write(f"Inference time: {inference_time:.2f} seconds\n")
-        f.write(f"{model_name} response: {answer}\n")
+        f.write(f"Gemma4 response: {answer}\n")

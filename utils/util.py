@@ -74,6 +74,7 @@ def merge_keyframe(args,video_name,images):
             new_size = (int(result_image.width * scale_factor), max_size)
             result_image = result_image.resize(new_size, Image.Resampling.LANCZOS)
     save_path = os.path.join(args.output_dir,"keyframes",f"{video_name}.jpg")
+    os.makedirs(os.path.dirname(save_path), exist_ok=True)
     result_image.save(save_path)
     return save_path
 

@@ -60,14 +60,15 @@ def main(args):
     
     print("Loading Seg-Zero ...")
     reasoning_model_path = args.segzero_model
-    segmentation_model_path = "facebook/sam2-hiera-large"
     reasoning_model = Qwen2_5_VLForConditionalGeneration.from_pretrained(
         reasoning_model_path,
         torch_dtype=torch.bfloat16,
         attn_implementation="flash_attention_2",
         device_map="auto",
     )
-    segmentation_model = SAM2ImagePredictor.from_pretrained(segmentation_model_path)
+    from sam2.build_sam import build_sam2
+    sam2_model = build_sam2(args.sam2_model_cfg, args.sam2_model, device=device)
+    segmentation_model = SAM2ImagePredictor(sam2_model)
     reasoning_model.eval()
     processor = AutoProcessor.from_pretrained(reasoning_model_path, padding_side="left")
     
@@ -113,7 +114,14 @@ def main(args):
     target_objects = parse_gpt_output(answer)
     all_image_paths = [os.path.join(video_dir,path) for path in frame_names]
     masks, ann_frame_idx = seg_zero_objects(args,reasoning_model,segmentation_model,processor,all_image_paths, target_objects, sample_every, save_mask=False, save_name=save_name)
-    inference_state = predictor.init_state(video_path=video_dir,offload_video_to_cpu=True,async_loading_frames=True)
+    
+    import tempfile
+    import shutil
+    temp_video_dir = tempfile.mkdtemp()
+    for i, frame_name in enumerate(frame_names):
+        os.symlink(os.path.abspath(os.path.join(video_dir, frame_name)), os.path.join(temp_video_dir, f"{i:05d}.jpg"))
+        
+    inference_state = predictor.init_state(video_path=temp_video_dir,offload_video_to_cpu=True,async_loading_frames=True)
     predictor.reset_state(inference_state)
     
     for object_id, (binary_mask,frame_idx) in enumerate(zip(masks,ann_frame_idx)):
@@ -156,6 +164,7 @@ def main(args):
             
         seg_imgs.append(save_img.astype(np.uint8))
     save_video(seg_imgs,os.path.join(args.output_dir,"predictions",f"{save_name}.mp4"))
+    shutil.rmtree(temp_video_dir)
 
 
 if __name__ == "__main__":
