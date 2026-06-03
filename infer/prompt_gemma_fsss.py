@@ -1,8 +1,8 @@
-from utils.util import preprocess_prompt
+from utils.util import preprocess_prompt_fsss
 import torch
 from pathlib import Path
 
-def prompt_gemma(model, processor, image_path, query, num_keyframes):
+def prompt_gemma(model, processor, image_path, k_shot=1):
     
     messages = [
         {
@@ -13,7 +13,7 @@ def prompt_gemma(model, processor, image_path, query, num_keyframes):
             "role": "user",
             "content": [
                 {"type": "image", "image": image_path},
-                {"type": "text", "text": preprocess_prompt(query, num_keyframes)}
+                {"type": "text", "text": preprocess_prompt_fsss(k_shot=k_shot)}
             ]
         }
     ]
@@ -37,6 +37,8 @@ def save_answer(
     query,
     answer,
     path,
+    model_name = "Gemma-3",
+    inference_time = None,
 ):
 
     # Create the parent directory if it doesn't already exist.
@@ -47,4 +49,6 @@ def save_answer(
         f.write(f"")
     with open(path,"a") as f:
         f.write(f"Query: {query}\n")
-        f.write(f"Gemma4 response: {answer}\n")
+        if inference_time is not None:
+            f.write(f"Inference time: {inference_time:.2f} seconds\n")
+        f.write(f"{model_name} response: {answer}\n")

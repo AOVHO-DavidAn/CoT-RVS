@@ -3,6 +3,7 @@ from PIL import Image, ImageFont, ImageDraw
 from pathlib import Path
 from skvideo import io
 import ast
+import re
 
 def save_video(
     images,
@@ -23,6 +24,12 @@ def save_video(
         writer.writeFrame(frame)
     writer.close()
     
+
+def merge_episode(args, s_img, s_mask, q_img):
+    
+    pass
+
+
 def merge_keyframe(args,video_name,images):
 
     width, height = images[0].size
@@ -92,11 +99,135 @@ def preprocess_prompt(query,num_keyframes):
 Here is a grid image with {num_keyframes} keyframes. The user query is "{query}". Follow the instruction and output the index of the best keyframes.
 """
 
+
+def preprocess_prompt_fsss(k_shot=1):
+    
+#     return f"""You will act as a visual reasoning agent for a few-shot semantic segmentation task. During each inference, you will be given a single concatenated image representing a {k_shot}-shot task. The image panels are aligned from left to right. For example, in a 1-shot setting, it consists of: Support Image, Target Highlight (the target object overlaid with a semi-transparent mask), Binary Mask, and finally the Query Image. There is no explicit text query; your target category is implicitly defined by the object highlighted in the Support panels.
+
+# You need to think in chain of thoughts to first deduce the semantic category and core visual characteristics of the target object from the Support set, and then find all instances of this exact semantic category in the Query Image. Your chain of thoughts should begin with analyzing the support target (what it is, shape, texture, material, parts), followed by a detailed scan of the Query Image. Some instances in the Query Image may be seriously obscured, blocked by other objects, camouflaged, or appear in different scales, angles, and lighting conditions compared to the support object.
+
+# This chain of thoughts should follow the output format: 
+# "Chain of Thoughts: 
+# - Support Set Analysis: <analysis of the support target>;
+# - Query Image Analysis: <analysis of the query image>;"
+
+# For the analysis of each section, you also have to follow the chain-of-thought format: 
+# "- *<question 1>* <answer 1>;
+# - *<question 2>* <answer 2>; 
+# ...", where you have to ask questions to yourself and answer them. Your answers should be as detailed as possible. You should start with broader questions, like "What specific object or part is highlighted in the support image?" and "What are its key visual features?" to some detailed questions in the query analysis like "Which objects in the query image share these semantic features?" and "Are there any partial or occluded instances that haven't been listed?". The actual questions vary by cases. Generate in-depth questions and answers based on your previous analysis. Your thinking process aims to find every valid instance of the target category in the Query Image.
+
+# Lastly, you have to summarize the output by outputting a list of dictionary with a format "Output list: [{{instance_index: 1, instance_description: <detailed description of instance 1>}}, {{instance_index: 2, instance_description: <detailed description of instance 2>}}, ...]", where each element in the list is a dictionary with two items: instance_index and instance_description. instance_index is a numbering integer starting with 1. instance_description is a detailed text description of that specific instance in the Query Image, helping a downstream referring segmentation model to accurately find and segment it. The description MUST include its exact spatial location in the Query Image (e.g., top-left, bottom-center) and contextual visual details (e.g., 'the partially rusted metal ring located in the upper right corner, partially obscured by a wire'). You have to include all instances that belong to the support category. Include the objects even if they are only partially visible. Keep the output list in text format. Don't use json formatting. The output list begins with the prefix "Output list: ", followed by a squared bracket with multiple curly brackets. The squared bracket should be in the same line, following the format "Output list: [...]". Don't start with a new line. Do not include anything after the output list.
+
+# Here is a concatenated image for a {k_shot}-shot task. Follow the instruction and output the list of target instances found in the Query Image.
+# """
+
+
+    return f"""You will act as a visual reasoning agent for a few-shot semantic segmentation task. During each inference, you will be given a single concatenated image representing a {k_shot}-shot task. The image panels are aligned from left to right. For example, in a 1-shot setting, it consists of: Support Image, Target Highlight (the target object overlaid with a semi-transparent mask), Binary Mask, and finally the Query Image. There is no explicit text query; your target category is implicitly defined by the object highlighted in the Support panels.
+
+You need to think in chain of thoughts to first deduce the semantic category and core visual characteristics of the target object from the Support set, and then find all instances of this exact semantic category in the Query Image. 
+
+Note that although the target instances in the Query Image belong to the exact same semantic category as the Support target, they may exhibit significant differences in fine-grained visual details. They might appear in entirely different scales, viewing angles, physical poses, or lighting conditions compared to the support object.
+
+Your chain of thoughts should begin with analyzing the support target (what it is, shape, texture, parts), followed by a detailed scan of the Query Image. Some instances in the Query Image may be seriously obscured, blocked by other objects, or camouflaged in complex backgrounds.
+
+This chain of thoughts should follow the output format: 
+"Chain of Thoughts: 
+- Support Set Analysis: <analysis of the support target>;
+- Query Image Analysis: <analysis of the query image>;"
+
+For the analysis of each section, you also have to follow the chain-of-thought format: 
+"- *<question 1>* <answer 1>;
+- *<question 2>* <answer 2>; 
+...", where you have to ask questions to yourself and answer them. Your answers should be as detailed as possible. You should start with broader questions, like "What specific object or part is highlighted in the support image?" and "What are its key visual features?" to some detailed questions in the query analysis like "Which objects in the query image share these semantic features?" and "Are there any partial or occluded instances that haven't been listed?". The actual questions vary by cases. Generate in-depth questions and answers based on your previous analysis. Your thinking process aims to find every valid instance of the target category in the Query Image.
+
+CRITICAL INSTRUCTION FOR OCCLUDED OBJECTS: 
+If a single target instance in the Query Image is severely occluded such that it is visually separated into multiple disconnected visible fragments, you MUST treat each disconnected visible fragment as a SEPARATE entity in your output list. Do not group them into one description. 
+
+Crucially, you must ask: "How can I uniquely distinguish each found instance from the others?" 
+The actual questions vary by cases. Generate in-depth questions and answers based on your previous analysis. Your thinking process aims to find every valid instance of the target category in the Query Image.
+
+CRITICAL INSTRUCTION FOR MULTIPLE INSTANCES: 
+When there are multiple instances (or multiple disconnected fragments) of the target category in the Query Image, your descriptions MUST be highly discriminative and mutually exclusive. Do not use generic descriptions that could apply to more than one instance. To prevent the downstream segmentation model from confusing them, you must explicitly use unique spatial anchors (e.g., 'the one closest to the red car', 'in the absolute top-right corner') and unique distinguishing attributes (e.g., 'the only one looking left', 'darker than the other instance').
+
+Lastly, you have to summarize the output by outputting a list of dictionary with a format "Output list: [{{instance_index: 1, instance_description: <detailed description of instance 1>}}, {{instance_index: 2, instance_description: <detailed description of instance 2>}}, ...]", where each element in the list is a dictionary with two items: instance_index and instance_description. instance_index is a numbering integer starting with 1. instance_description is a detailed text description of that specific instance (or visible fragment) in the Query Image, helping a downstream referring segmentation model to accurately find and segment it. The description MUST include its exact spatial location in the Query Image (e.g., top-left, bottom-center) and contextual visual details. 
+
+You have to include all instances and fragments that belong to the support category. Keep the output list in text format. Don't use json formatting. The output list begins with the prefix "Output list: ", followed by a squared bracket with multiple curly brackets. The squared bracket should be in the same line, following the format "Output list: [...]". Don't start with a new line. Do not include anything after the output list.
+
+For example, if the target is a dog, and a dog in the Query Image is standing behind a solid wooden fence causing its visible body to be visually cut into two disconnected parts (the head and the tail), you should output two separate elements like:
+{{instance_index: 1, instance_description: "the visible head and front paws of the dog, located in the lower-left of the image, emerging from the left side of the fence"}} and 
+{{instance_index: 2, instance_description: "the visible tail and hind legs of the same dog, located in the lower-right of the image, sticking out from the right side of the fence"}}.
+
+Here is a concatenated image for a {k_shot}-shot task. Follow the instruction and output the list of target instances found in the Query Image.
+"""
+    
+    
+#     return f"""You will act as a visual reasoning agent for a few-shot semantic segmentation task. During each inference, you will be given a single concatenated image representing a {k_shot}-shot task. The image panels are aligned from left to right. For example, in a 1-shot setting, it consists of: Support Image, Target Highlight (the target object overlaid with a semi-transparent mask), Binary Mask, and finally the Query Image. There is no explicit text query; your target category is implicitly defined by the object highlighted in the Support panels.
+
+# You need to think in chain of thoughts to first deduce the semantic category and core visual characteristics of the target object from the Support set, and then find all instances of this exact semantic category in the Query Image. 
+
+# Note that although the target instances in the Query Image belong to the exact same semantic category as the Support target, they may exhibit significant differences in fine-grained visual details. They might appear in entirely different scales, viewing angles, physical poses, or lighting conditions compared to the support object.
+
+# Your chain of thoughts should begin with analyzing the support target (what it is, shape, texture, parts), followed by a detailed scan of the Query Image. Some instances in the Query Image may be seriously obscured, blocked by other objects, or camouflaged in complex backgrounds.
+
+# This chain of thoughts should follow the output format: 
+# "Chain of Thoughts: 
+# - Support Set Analysis: <analysis of the support target>;
+# - Query Image Analysis: <analysis of the query image>;"
+
+# For the analysis of each section, you also have to follow the chain-of-thought format: 
+# "- *<question 1>* <answer 1>;
+# - *<question 2>* <answer 2>; 
+# ...", where you have to ask questions to yourself and answer them. Your answers should be as detailed as possible. You should start with broader questions, like "What specific object or part is highlighted in the support image?" and "What are its key visual features?" to some detailed questions in the query analysis like "Which objects in the query image share these semantic features?" and "Are there any partial or occluded instances that haven't been listed?". 
+
+# [新增：强制在思维链中进行对比分析]
+# Crucially, you must ask: "How can I uniquely distinguish each found instance from the others?" 
+
+# The actual questions vary by cases. Generate in-depth questions and answers based on your previous analysis. Your thinking process aims to find every valid instance of the target category in the Query Image.
+
+# [新增：多实例排他性描述指令]
+# CRITICAL INSTRUCTION FOR MULTIPLE INSTANCES: 
+# When there are multiple instances (or multiple disconnected fragments) of the target category in the Query Image, your descriptions MUST be highly discriminative and mutually exclusive. Do not use generic descriptions that could apply to more than one instance. To prevent the downstream segmentation model from confusing them, you must explicitly use unique spatial anchors (e.g., 'the one closest to the red car', 'in the absolute top-right corner') and unique distinguishing attributes (e.g., 'the only one looking left', 'darker than the other instance'). 
+
+# CRITICAL INSTRUCTION FOR OCCLUDED OBJECTS: 
+# If a single target instance in the Query Image is severely occluded such that it is visually separated into multiple disconnected visible fragments, you MUST treat each disconnected visible fragment as a SEPARATE entity in your output list. Do not group them into one description. 
+# For example, if the target is a dog, and a dog in the Query Image is visually cut into two disconnected parts (the head and the tail) by a fence, you should output two separate elements like:
+# {{instance_index: 1, instance_description: "the visible head of the dog, located in the lower-left, emerging from the left side of the fence. This part only contains the head and ears, no body."}} and 
+# {{instance_index: 2, instance_description: "the visible tail of the same dog, located in the lower-right, sticking out from the right side of the fence. This part only contains a furry tail, clearly separated from the head section."}}.
+
+# Lastly, you have to summarize the output by outputting a list of dictionary with a format "Output list: [{{instance_index: 1, instance_description: <detailed description of instance 1>}}, {{instance_index: 2, instance_description: <detailed description of instance 2>}}, ...]", where each element in the list is a dictionary with two items: instance_index and instance_description. instance_index is a numbering integer starting with 1. instance_description is a detailed text description of that specific instance (or visible fragment) in the Query Image, helping a downstream referring segmentation model to accurately find and segment it. The description MUST include its exact spatial location in the Query Image (e.g., top-left, bottom-center) and contextual visual details. 
+
+# You have to include all instances and fragments that belong to the support category. Keep the output list in text format. Don't use json formatting. The output list begins with the prefix "Output list: ", followed by a squared bracket with multiple curly brackets. The squared bracket should be in the same line, following the format "Output list: [...]". Don't start with a new line. Do not include anything after the output list.
+
+# Here is a concatenated image for a {k_shot}-shot task. Follow the instruction and output the list of target instances found in the Query Image.
+# """
+
+
+
 def parse_gpt_output(text):
     list_outputs = text.split("Output list: ")[-1]
-    # Prepare the input string for parsing
-    text_input = list_outputs.replace('object_index', '"object_index"').replace('keyframe', '"keyframe"').replace('object_description', '"object_description"')
+
+    # Normalize unquoted keys for both video and FSSS outputs.
+    keys = [
+        "object_index",
+        "keyframe",
+        "object_description",
+        "instance_index",
+        "instance_description",
+    ]
+    text_input = list_outputs
+    for key in keys:
+        text_input = re.sub(rf'(?<!\")\b{key}\b(?!\")', f'"{key}"', text_input)
 
     # Convert the string to a list of dictionaries
     output = ast.literal_eval(text_input)
-    return output
+
+    # Normalize FSSS instance_* keys to object_* for downstream use.
+    normalized = []
+    for item in output:
+        if isinstance(item, dict):
+            if "object_index" not in item and "instance_index" in item:
+                item["object_index"] = item.pop("instance_index")
+            if "object_description" not in item and "instance_description" in item:
+                item["object_description"] = item.pop("instance_description")
+        normalized.append(item)
+    return normalized
