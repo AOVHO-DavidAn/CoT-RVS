@@ -2,7 +2,7 @@ from utils.util import preprocess_prompt_fsss
 import torch
 from pathlib import Path
 
-def prompt_gemma(model, processor, image_path, k_shot=1):
+def prompt_gemma(model, processor, image, k_shot=1):
     
     messages = [
         {
@@ -12,7 +12,7 @@ def prompt_gemma(model, processor, image_path, k_shot=1):
         {
             "role": "user",
             "content": [
-                {"type": "image", "image": image_path},
+                {"type": "image", "image": image},
                 {"type": "text", "text": preprocess_prompt_fsss(k_shot=k_shot)}
             ]
         }

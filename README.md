@@ -94,6 +94,23 @@ python seg_and_track.py \
 --num_candidates 8
 ```
 
+### FSSS End-to-End Pipeline (Dataset -> Reasoning -> Segmentation)
+This pipeline samples few-shot episodes directly from datasets and runs the full
+few-shot segmentation flow without saving intermediate artifacts unless requested.
+```
+python run_fsss_pipeline.py \
+--dataset fss-1000 \
+--dataset_root ./datasets \
+--k_shot 1 \
+--num_episodes 1 \
+--gemma_model_name Gemma-3-12B-it \
+--gemma_model_path ./checkpoints/gemma_weights/gemma-3-12b-it \
+--sam2_model ./checkpoints/sam_weights/sam2.1_hiera_large.pt \
+--sam2_model_cfg configs/sam2.1/sam2.1_hiera_l.yaml \
+--segzero_model Ricky06662/Seg-Zero-7B
+```
+Use `--save_intermediates` to persist merged prompt images, Gemma outputs, and masks.
+
 ## T-ReasonVOS Dataset
 Refer to the [T-ReasonVOS](T-ReasonVOS) directory for more details.
 

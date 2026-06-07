@@ -75,10 +75,11 @@ def create_mllm_test_image(support_path, mask_path, query_path, output_dir="./ou
     print(f"拼接图像已成功保存至: {output_path}")
     return final_mllm_image
 
-# 测试运行的例子：
-episode_dir = "./few-shot_episode/balloon"
-support_path = os.path.join(episode_dir, "support_img.jpg")
-mask_path = os.path.join(episode_dir, "support_mask.png")
-query_path = os.path.join(episode_dir, "query_img.jpg")
+if __name__ == "__main__":
+    # Example usage for quick manual checks.
+    episode_dir = "./few-shot_episode/balloon"
+    support_path = os.path.join(episode_dir, "support_img.jpg")
+    mask_path = os.path.join(episode_dir, "support_mask.png")
+    query_path = os.path.join(episode_dir, "query_img.jpg")
 
-create_mllm_test_image(support_path, mask_path, query_path, "./outputs/merged_episode", "test_input.jpg")
+    create_mllm_test_image(support_path, mask_path, query_path, "./outputs/merged_episode", "test_input.jpg")

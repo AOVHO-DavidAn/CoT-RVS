@@ -36,7 +36,17 @@ def extract_bbox_points_think(output_text, x_factor, y_factor):
     
     return content_bbox, points, think_text
 
-def generate_mask(args,reasoning_model, segmentation_model, processor, image_path, query, save_mask=False,save_name=None):
+def generate_mask(
+    args,
+    reasoning_model,
+    segmentation_model,
+    processor,
+    image,
+    query,
+    save_mask=False,
+    save_name=None,
+    # image=None,
+):
         
     QUESTION_TEMPLATE = \
         "Please find '{Question}' with bbox and points." \
@@ -47,7 +57,9 @@ def generate_mask(args,reasoning_model, segmentation_model, processor, image_pat
         "<answer>{Answer}</answer>"
     
     
-    image = PILImage.open(image_path).convert('RGB')
+    if image is None or type(image) == str:
+        image_path = image
+        image = PILImage.open(image_path).convert('RGB')
     original_width, original_height = image.size
     resize_size = 840
     x_factor, y_factor = original_width/resize_size, original_height/resize_size

@@ -4,6 +4,9 @@ from pathlib import Path
 from skvideo import io
 import ast
 import re
+import numpy as np
+
+from fsss.common.logger import Logger
 
 def save_video(
     images,
@@ -28,6 +31,87 @@ def save_video(
 def merge_episode(args, s_img, s_mask, q_img):
     
     pass
+
+
+def save_masked_image(query_img, mask, ground_truth, output_dir, img_name):
+    # 处理 tensor 输入：转为 numpy RGB 格式 (H, W, C)
+    if hasattr(query_img, 'cpu'):
+        query_img = query_img.cpu().detach()
+    if hasattr(query_img, 'numpy'):
+        query_img = query_img.numpy()
+    
+    if hasattr(mask, 'cpu'):
+        mask = mask.cpu().detach()
+    if hasattr(mask, 'numpy'):
+        mask = mask.numpy()
+        
+    if hasattr(ground_truth, 'cpu'):
+        ground_truth = ground_truth.cpu().detach()
+    if hasattr(ground_truth, 'numpy'):
+        ground_truth = ground_truth.numpy()
+
+
+    # squeeze 掉 batch 维度（如有）
+    if query_img.ndim == 4 and query_img.shape[0] == 1:
+        query_img = query_img.squeeze(0)
+    if mask.ndim == 3 and mask.shape[0] == 1:
+        mask = mask.squeeze(0)
+    if ground_truth.ndim == 3 and ground_truth.shape[0] == 1:
+        ground_truth = ground_truth.squeeze(0)
+
+    # CHW → HWC（PyTorch tensor 通常是 [C, H, W]）
+    if query_img.ndim == 3 and query_img.shape[0] == 3:
+        query_img = np.transpose(query_img, (1, 2, 0))
+
+    # 值域 [0, 1] float → [0, 255] uint8
+    if query_img.dtype in (np.float32, np.float64) and query_img.max() <= 1.0:
+        query_img = (query_img * 255)
+    query_img = query_img.astype(np.uint8)
+
+    mask = mask.astype(bool)
+    ground_truth = ground_truth.astype(bool)
+
+    color = np.array([255, 0, 0], dtype=np.float32)   # RGB 红色
+    alpha = 1
+
+    # 叠加半透明红色遮罩
+    overlay = query_img.astype(np.float32)
+    overlay[mask] = overlay[mask] * (1 - alpha) + color * alpha
+    
+    overlay_label = query_img.astype(np.float32)
+    overlay_label[ground_truth] = overlay_label[ground_truth] * (1 - alpha) + color * alpha
+    
+    #将预测mask和ground_truth的叠加结果拼接在一起
+    combined_overlay = np.concatenate((overlay, overlay_label), axis=1)
+
+    # 用 PIL 保存可视化结果，并添加顶部文字标识
+    vis_save_path = os.path.join(output_dir, f"{img_name}_vis.jpg")
+    combined_img = Image.fromarray(combined_overlay.astype(np.uint8))
+
+    # 添加顶部文字标识栏
+    h, w = combined_overlay.shape[0], combined_overlay.shape[1]
+    label_height = max(30, h // 15)  # 文字栏高度
+    label_bg = Image.new('RGB', (w, label_height), (30, 30, 30))  # 深灰色背景栏
+
+    # 创建最终画布：文字栏在上，拼接图在下
+    final_img = Image.new('RGB', (w, h + label_height))
+    final_img.paste(label_bg, (0, 0))
+    final_img.paste(combined_img, (0, label_height))
+
+    draw = ImageDraw.Draw(final_img)
+    try:
+        font = ImageFont.truetype("DejaVuSans.ttf", label_height - 6)
+    except (IOError, OSError):
+        font = ImageFont.load_default()
+
+    half_w = w // 2
+    # 左半部分标注 "Prediction"，右半部分标注 "Ground Truth"
+    draw.text((half_w // 2, 3), "Prediction", fill=(255, 255, 255), font=font,
+              anchor="mt")
+    draw.text((half_w + half_w // 2, 3), "Ground Truth", fill=(255, 255, 255), font=font,
+              anchor="mt")
+
+    final_img.save(vis_save_path)
 
 
 def merge_keyframe(args,video_name,images):
@@ -122,7 +206,14 @@ def preprocess_prompt_fsss(k_shot=1):
 # """
 
 
-    return f"""You will act as a visual reasoning agent for a few-shot semantic segmentation task. During each inference, you will be given a single concatenated image representing a {k_shot}-shot task. The image panels are aligned from left to right. For example, in a 1-shot setting, it consists of: Support Image, Target Highlight (the target object overlaid with a semi-transparent mask), Binary Mask, and finally the Query Image. There is no explicit text query; your target category is implicitly defined by the object highlighted in the Support panels.
+    return f"""You will act as a visual reasoning agent for a few-shot semantic segmentation task. During each inference, you will be given a single concatenated image representing a {k_shot}-shot task. The image panels are aligned from left to right. For example, in a 1-shot setting, it consists of: Support Image, Target Object Cutout (the target object isolated on a white background with its original surroundings removed), Binary Mask, and finally the Query Image. There is no explicit text query; your target category is implicitly defined by the object isolated in the Support panels.
+
+You need to think in chain of thoughts to first deduce the BROAD SEMANTIC CATEGORY (e.g., "chair", "car", "dog") of the target object from the Support set, and then find all instances belonging to this general semantic category in the Query Image. 
+
+Your task is category-level semantic segmentation, NOT strict instance matching. Do NOT restrict your search to objects with the exact same color, material, style, or sub-type as the support object. You must generalize to the broader class. 
+For example, if the support image highlights a "red wooden dining chair", you MUST find ALL types of chairs in the query image (e.g., blue plastic office chairs, metal folding chairs, wooden stools), because they all belong to the overarching semantic category of "chair".
+
+Note that although the target instances in the Query Image belong to the exact same broad semantic category as the Support target, they may exhibit extreme differences in fine-grained visual details. They might appear in entirely different colors, textures, materials, sub-types, scales, viewing angles, physical poses, or lighting conditions compared to the support object.
 
 You need to think in chain of thoughts to first deduce the semantic category and core visual characteristics of the target object from the Support set, and then find all instances of this exact semantic category in the Query Image. 
 
@@ -204,9 +295,31 @@ Here is a concatenated image for a {k_shot}-shot task. Follow the instruction an
 
 
 def parse_gpt_output(text):
+    # 1. 提取 "Output list: " 之后的所有内容
     list_outputs = text.split("Output list: ")[-1]
 
-    # Normalize unquoted keys for both video and FSSS outputs.
+    # 2. 找到第一个 [...] 块（列表），用括号深度匹配，忽略后面的自然语言
+    start = list_outputs.find('[')
+    if start == -1:
+        return []
+
+    depth = 0
+    end = -1
+    for i in range(start, len(list_outputs)):
+        if list_outputs[i] == '[':
+            depth += 1
+        elif list_outputs[i] == ']':
+            depth -= 1
+            if depth == 0:
+                end = i
+                break
+
+    if end == -1:
+        return []
+
+    text_input = list_outputs[start:end + 1]
+
+    # 3. 规范化未加引号的 key
     keys = [
         "object_index",
         "keyframe",
@@ -214,14 +327,17 @@ def parse_gpt_output(text):
         "instance_index",
         "instance_description",
     ]
-    text_input = list_outputs
     for key in keys:
         text_input = re.sub(rf'(?<!\")\b{key}\b(?!\")', f'"{key}"', text_input)
 
-    # Convert the string to a list of dictionaries
-    output = ast.literal_eval(text_input)
+    # 4. 解析为 Python 字面量
+    try:
+        output = ast.literal_eval(text_input)
+    except (SyntaxError, ValueError):
+        Logger.info("WARNING: Failed to parse GPT output. Returning empty list.")
+        return []
 
-    # Normalize FSSS instance_* keys to object_* for downstream use.
+    # 5. 将 instance_* 归一化为 object_*
     normalized = []
     for item in output:
         if isinstance(item, dict):

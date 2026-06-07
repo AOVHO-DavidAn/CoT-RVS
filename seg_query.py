@@ -24,7 +24,7 @@ def parse_args(args):
     parser.add_argument("--output_dir", default="./vis_output/query_masks", type=str)
     return parser.parse_args(args)
 
-def seg_query_objects(args, reasoning_model, segmentation_model, processor, query_image_path, target_objects, save_mask=True, save_name="query_obj_"):
+def seg_query_objects(args, reasoning_model, segmentation_model, processor, query_img, target_objects, save_mask=False, save_name="query_obj_"):
     """
     针对 FSSS 的 query 图像进行逐目标分割
     """
@@ -47,7 +47,7 @@ def seg_query_objects(args, reasoning_model, segmentation_model, processor, quer
             reasoning_model=reasoning_model,
             segmentation_model=segmentation_model,
             processor=processor,
-            image_path=query_image_path,
+            image=query_img,
             query=prompt,
             save_mask=save_mask,  # 设定为True，输出每个物体单独的分割mask
             save_name=current_save_name
@@ -55,20 +55,21 @@ def seg_query_objects(args, reasoning_model, segmentation_model, processor, quer
         
         if save_mask:
             # 读取原始图像
-            image_cv = cv2.imread(query_image_path)
-            if image_cv is not None:
-                # BGR 格式，红色为 [0, 0, 255]
-                color = np.array([0, 0, 255], dtype=np.float32)
-                alpha = 1
+            # image_cv = cv2.imread(query_image_path)
+            # if image_cv is not None:
+            #     # BGR 格式，红色为 [0, 0, 255]
+            #     color = np.array([0, 0, 255], dtype=np.float32)
+            #     alpha = 1
                 
-                # 叠加半透明红色遮罩
-                overlay = image_cv.copy()
-                overlay[mask] = overlay[mask] * (1 - alpha) + color * alpha
+            #     # 叠加半透明红色遮罩
+            #     overlay = image_cv.copy()
+            #     overlay[mask] = overlay[mask] * (1 - alpha) + color * alpha
                 
-                # 保存可视化结果
-                vis_save_path = f"{current_save_name}_vis.jpg"
-                cv2.imwrite(vis_save_path, overlay.astype(np.uint8))
-                print(f"Saved mask visualization to {vis_save_path}")
+            #     # 保存可视化结果
+            #     vis_save_path = f"{current_save_name}_vis.jpg"
+            #     cv2.imwrite(vis_save_path, overlay.astype(np.uint8))
+            #     print(f"Saved mask visualization to {vis_save_path}")
+            pass
         
         masks.append({
             "object_index": object_index,

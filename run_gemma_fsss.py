@@ -73,7 +73,7 @@ def main(args):
     answer = prompt_gemma(
         model=gemma_model,
         processor=gemma_processor,
-        image_path=args.image_path,
+        image=args.image_path,
         k_shot=args.k_shot,
     )
     inference_time = time.perf_counter() - start_time
